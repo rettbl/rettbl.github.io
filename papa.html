@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les Recettes des Monstres</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 2rem;
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .error-banner {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      border: 1px solid #f1b0b7;
+      display: none;
+    }
+
+    .error-banner.show {
+      display: block;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+
+    .loading.show {
+      display: block;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #e74c3c;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .firebase-status {
+      text-align: center;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .firebase-status.connected {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .firebase-status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f1b0b7;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #e74c3c;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      padding: 1rem 2rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #7f8c8d;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      color: #e74c3c;
+      border-bottom-color: #e74c3c;
+      transform: translateY(-2px);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .search-filters {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      border: 2px solid #e9ecef;
+      border-radius: 25px;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .search-bar:focus {
+      outline: none;
+      border-color: #e74c3c;
+      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+    }
+
+    .filter-section {
+      margin-bottom: 1rem;
+    }
+
+    .filter-title {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+    }
+
+    .filter-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-btn, .ingredient-btn {
+      padding: 0.5rem 1rem;
+      border: 2px solid #ddd;
+      background: white;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .filter-btn:hover, .ingredient-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-btn.selected, .ingredient-btn.selected {
+      background: #e74c3c;
+      color: white;
+      border-color: #c0392b;
+    }
+
+    .form-container {
+      background: #f8f9fa;
+      padding: 2rem;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1rem;
+    }
+
+    .form-input {
+      padding: 1rem;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #e74c3c;
+      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+    }
+
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .ingredient-input-group {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 0.5rem;
+      align-items: end;
+    }
+
+    .ingredient-list {
+      background: white;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      padding: 1rem;
+      min-height: 100px;
+      margin-top: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .ingredient-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      background: #f1f3f4;
+      border-radius: 8px;
+    }
+
+    .btn {
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #e74c3c, #c0392b);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(45deg, #3498db, #2980b9);
+      color: white;
+    }
+
+    .btn-success {
+      background: linear-gradient(45deg, #27ae60, #229954);
+      color: white;
+    }
+
+    .btn-danger {
+      background: linear-gradient(45deg, #e74c3c, #c0392b);
+      color: white;
+    }
+
+    .btn-small {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .recipe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .recipe-card {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .recipe-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .recipe-content {
+      padding: 1.5rem;
+    }
+
+    .recipe-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    .recipe-category {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      background: linear-gradient(45deg, #3498db, #2980b9);
+      color: white;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .recipe-author {
+      font-size: 0.8rem;
+      color: #7f8c8d;
+      margin-bottom: 0.5rem;
+    }
+
+    .recipe-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
+      z-index: 1001;
+      animation: slideInRight 0.3s ease;
+      max-width: 300px;
+    }
+
+    .notification.success { background: #27ae60; }
+    .notification.error { background: #e74c3c; }
+    .notification.info { background: #3498db; }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 0;
+        padding: 1rem;
+        border-radius: 0;
+      }
+
+      .recipe-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ingredient-input-group {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Les Recettes des Monstres</h1>
+    
+    <div id="error-banner" class="error-banner">
+      <span id="error-message"></span>
+    </div>
+    
+    <div id="firebase-status" class="firebase-status">
+      <div class="loading show">
+        <div class="spinner"></div>
+        Connexion à Firebase...
+      </div>
+    </div>
+    
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('recipes')">Mes Recettes</button>
+      <button class="tab-btn" onclick="showTab('add')">Ajouter</button>
+    </div>
+
+    <!-- Onglet Recettes -->
+    <div id="recipes-tab" class="tab-content active">
+      <div class="search-filters">
+        <input type="text" id="search" class="search-bar" placeholder="Rechercher par nom, ingrédient ou instruction...">
+        
+        <div class="filter-section">
+          <div class="filter-title">Catégories</div>
+          <div id="category-filter" class="filter-buttons"></div>
+        </div>
+      </div>
+
+      <div id="recipes-list" class="recipe-grid">
+        <div class="loading show">
+          <div class="spinner"></div>
+          Chargement des recettes...
+        </div>
+      </div>
+    </div>
+
+    <!-- Onglet Ajouter -->
+    <div id="add-tab" class="tab-content">
+      <div class="form-container">
+        <form id="recipe-form">
+          <input type="hidden" id="edit-id">
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="title">Nom de la recette *</label>
+              <input type="text" id="title" class="form-input" placeholder="Ex: Ratatouille provençale" required maxlength="100">
+            </div>
+
+            <div class="form-group">
+              <label for="author">Votre nom *</label>
+              <input type="text" id="author" class="form-input" placeholder="Votre nom ou pseudo" required maxlength="50">
+            </div>
+
+            <div class="form-group">
+              <label for="category">Catégorie *</label>
+              <select id="category" class="form-input" required>
+                <option value="">-- Choisir une catégorie --</option>
+                <option value="Entrées">Entrées</option>
+                <option value="Plats principaux">Plats principaux</option>
+                <option value="Desserts">Desserts</option>
+                <option value="Boissons">Boissons</option>
+                <option value="Apéritifs">Apéritifs</option>
+                <option value="Petits déjeuners">Petits déjeuners</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="prep-time">Temps de préparation (minutes)</label>
+              <input type="number" id="prep-time" class="form-input" placeholder="30" min="1" max="1440">
+            </div>
+
+            <div class="form-group">
+              <label for="servings">Nombre de portions</label>
+              <input type="number" id="servings" class="form-input" placeholder="4" min="1" max="50">
+            </div>
+
+            <div class="form-group">
+              <label>Ingrédients *</label>
+              <div class="ingredient-input-group">
+                <input type="text" id="ingredient-name" class="form-input" placeholder="Nom de l'ingrédient" maxlength="50">
+                <input type="text" id="ingredient-quantity" class="form-input" placeholder="Ex: 500g" maxlength="20">
+                <button type="button" class="btn btn-success" onclick="addIngredient()">+</button>
+              </div>
+              <div id="ingredient-list" class="ingredient-list">
+                <p style="text-align: center; color: #999; font-style: italic;">Aucun ingrédient ajouté</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="instructions">Instructions *</label>
+              <textarea id="instructions" class="form-input form-textarea" placeholder="Décrivez les étapes de préparation..." required maxlength="2000"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submit-btn">Enregistrer la recette</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration Firebase
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBAMsyOU5pBJJ68s6XbybuXX9-36yGHHw8",
+      authDomain: "cook-aa6a8.firebaseapp.com",
+      projectId: "cook-aa6a8",
+      storageBucket: "cook-aa6a8.firebasestorage.app",
+      messagingSenderId: "683951938332",
+      appId: "1:683951938332:web:0e7192b528940181de38d9",
+      measurementId: "G-K63QS0JFHJ"
+    };
+
+    // Variables globales
+    let app, db;
+    let recipes = [];
+    let filteredRecipes = [];
+    let tempIngredients = [];
+    let selectedFilters = {
+      category: null
+    };
+    let currentTab = 'recipes';
+    let isLoading = false;
+
+    // Variable pour éviter la récursion
+    let firebaseInitialized = false;
+    let unsubscribeListener = null;
+
+    // Configuration en mode offline par défaut
+    let offlineMode = false;
+    let offlineData = JSON.parse(localStorage.getItem('recipes-offline') || '[]');
+
+    // Initialisation de l'application - VERSION CORRIGÉE
+    async function initializeApp() {
+      if (firebaseInitialized) return; // Éviter la réinitialisation
+      
+      updateFirebaseStatus('connected', 'Initialisation...');
+      
+      try {
+        if (!offlineMode) {
+          // Import Firebase modules dynamiquement
+          const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+          const { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs, 
+            doc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot,
+            query,
+            orderBy 
+          } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+
+          // Stocker les références Firebase globalement
+          window.FirebaseModules = {
+            collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy
+          };
+
+          app = initializeApp(FIREBASE_CONFIG);
+          db = getFirestore(app);
+          firebaseInitialized = true; // Marquer comme initialisé
+          
+          updateFirebaseStatus('connected', 'Connecté à Firebase');
+          await loadRecipes();
+        } else {
+          updateFirebaseStatus('connected', 'Mode hors ligne activé');
+          loadOfflineRecipes();
+        }
+        
+        setupEventListeners();
+      } catch (error) {
+        console.error('Erreur Firebase:', error);
+        updateFirebaseStatus('error', 'Erreur de connexion - Basculement en mode hors ligne');
+        offlineMode = true;
+        loadOfflineRecipes();
+        setupEventListeners();
+      }
+    }
+
+    function updateFirebaseStatus(status, message) {
+      const statusEl = document.getElementById('firebase-status');
+      statusEl.className = `firebase-status ${status}`;
+      statusEl.innerHTML = message;
+    }
+
+    // Configuration des événements
+    function setupEventListeners() {
+      // Éviter les listeners multiples
+      const searchInput = document.getElementById('search');
+      if (!searchInput.hasAttribute('data-listener-added')) {
+        searchInput.addEventListener('input', debounce(applyFilters, 300));
+        searchInput.setAttribute('data-listener-added', 'true');
+      }
+      
+      const form = document.getElementById('recipe-form');
+      if (!form.hasAttribute('data-listener-added')) {
+        form.addEventListener('submit', saveRecipe);
+        form.setAttribute('data-listener-added', 'true');
+      }
+      
+      // Validation en temps réel
+      ['title', 'author', 'category', 'instructions'].forEach(id => {
+        const element = document.getElementById(id);
+        if (!element.hasAttribute('data-listener-added')) {
+          element.addEventListener(id === 'category' ? 'change' : 'input', validateForm);
+          element.setAttribute('data-listener-added', 'true');
+        }
+      });
+    }
+
+    // Chargement des recettes depuis Firebase - VERSION CORRIGÉE
+    async function loadRecipes() {
+      try {
+        showLoading(true);
+        
+        if (!offlineMode && window.FirebaseModules && !unsubscribeListener) {
+          const { collection, query, orderBy, onSnapshot } = window.FirebaseModules;
+          
+          // Écoute en temps réel des changements - UNE SEULE FOIS
+          const q = query(collection(db, 'recipes'), orderBy('createdAt', 'desc'));
+          unsubscribeListener = onSnapshot(q, (querySnapshot) => {
+            recipes = [];
+            querySnapshot.forEach((doc) => {
+              recipes.push({
+                id: doc.id,
+                ...doc.data()
+              });
+            });
+            
+            processRecipesData();
+          }, (error) => {
+            console.error('Erreur lors de l\'écoute:', error);
+            showNotification('Basculement en mode hors ligne', 'info');
+            offlineMode = true;
+            loadOfflineRecipes();
+          });
+        } else if (offlineMode) {
+          loadOfflineRecipes();
+        }
+        
+      } catch (error) {
+        console.error('Erreur lors du chargement:', error);
+        showNotification('Erreur lors du chargement des recettes', 'error');
+        offlineMode = true;
+        loadOfflineRecipes();
+      }
+    }
+
+    // Chargement des recettes en mode hors ligne
+    function loadOfflineRecipes() {
+      recipes = offlineData.map((recipe, index) => ({
+        id: recipe.id || `offline-${index}`,
+        ...recipe
+      }));
+      processRecipesData();
+    }
+
+    // Traitement des données une fois chargées - OPTIMISÉ
+    function processRecipesData() {
+      displayRecipes();
+      updateFilters();
+      showLoading(false);
+    }
+
+    // Sauvegarde des données hors ligne
+    function saveOfflineData() {
+      localStorage.setItem('recipes-offline', JSON.stringify(recipes));
+    }
+
+    // Affichage des recettes - SIMPLIFIÉ
+    function displayRecipes() {
+      const container = document.getElementById('recipes-list');
+      
+      if (recipes.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: #999; grid-column: 1 / -1;">
+            <h3>Aucune recette trouvée</h3>
+            <p>Soyez le premier à ajouter une recette !</p>
+            <button class="btn btn-primary" onclick="showTab('add')">Ajouter une recette</button>
+          </div>
+        `;
+        return;
+      }
+
+      filteredRecipes = applyFiltersToRecipes();
+      
+      if (filteredRecipes.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: #999; grid-column: 1 / -1;">
+            <h3>Aucune recette ne correspond à vos critères</h3>
+            <p>Essayez de modifier vos filtres de recherche.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      filteredRecipes.forEach((recipe) => {
+        const card = createRecipeCard(recipe);
+        container.appendChild(card);
+      });
+    }
+
+    // Création d'une carte de recette - SIMPLIFIÉ
+    function createRecipeCard(recipe) {
+      const card = document.createElement('div');
+      card.className = 'recipe-card';
+      
+      const createdDate = recipe.createdAt ? new Date(recipe.createdAt).toLocaleDateString() : '';
+
+      card.innerHTML = `
+        <div class="recipe-content">
+          <div class="recipe-category">${recipe.category || 'Non catégorisé'}</div>
+          <div class="recipe-author">Par ${sanitizeHtml(recipe.author || 'Anonyme')} ${createdDate ? '• ' + createdDate : ''}</div>
+          <h3 class="recipe-title">${sanitizeHtml(recipe.title)}</h3>
+          
+          ${recipe.prepTime ? `<p><strong>Préparation:</strong> ${recipe.prepTime} min</p>` : ''}
+          ${recipe.servings ? `<p><strong>Portions:</strong> ${recipe.servings}</p>` : ''}
+          
+          <div style="margin: 1rem 0;">
+            <strong>Ingrédients (${recipe.ingredients ? recipe.ingredients.length : 0}):</strong>
+            ${recipe.ingredients ? recipe.ingredients.slice(0, 3).map(ing => `<br>• ${sanitizeHtml(ing.nom)} - ${sanitizeHtml(ing.quantite)}`).join('') : ''}
+            ${recipe.ingredients && recipe.ingredients.length > 3 ? `<br>... et ${recipe.ingredients.length - 3} autres` : ''}
+          </div>
+
+          <p style="color: #666; margin-bottom: 1rem;">
+            ${recipe.instructions ? (recipe.instructions.length > 100 ? sanitizeHtml(recipe.instructions.substring(0, 100)) + '...' : sanitizeHtml(recipe.instructions)) : ''}
+          </p>
+
+          <div class="recipe-actions">
+            <button class="btn btn-secondary btn-small" onclick="viewRecipeDetails('${recipe.id}')">Voir détails</button>
+            <button class="btn btn-danger btn-small" onclick="deleteRecipe('${recipe.id}')">Supprimer</button>
+          </div>
+        </div>
+      `;
+
+      return card;
+    }
+
+    // Sauvegarde d'une recette - CORRIGÉ
+    async function saveRecipe(e) {
+      e.preventDefault();
+      
+      if (isLoading) return;
+      
+      const submitBtn = document.getElementById('submit-btn');
+      const originalText = submitBtn.textContent;
+      
+      try {
+        isLoading = true;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Enregistrement...';
+        
+        const now = new Date().toISOString();
+        const formData = {
+          title: document.getElementById('title').value.trim(),
+          author: document.getElementById('author').value.trim(),
+          category: document.getElementById('category').value,
+          prepTime: parseInt(document.getElementById('prep-time').value) || 0,
+          servings: parseInt(document.getElementById('servings').value) || 1,
+          ingredients: [...tempIngredients],
+          instructions: document.getElementById('instructions').value.trim(),
+          createdAt: now,
+          updatedAt: now
+        };
+
+        // Validation
+        if (!formData.title || !formData.author || !formData.category || tempIngredients.length === 0 || !formData.instructions) {
+          showNotification('Veuillez remplir tous les champs obligatoires', 'error');
+          return;
+        }
+
+        // Sauvegarde
+        if (!offlineMode && window.FirebaseModules) {
+          const { collection, addDoc } = window.FirebaseModules;
+          await addDoc(collection(db, 'recipes'), formData);
+        } else {
+          // Mode hors ligne
+          formData.id = 'offline-' + Date.now();
+          recipes.unshift(formData);
+          saveOfflineData();
+          processRecipesData();
+        }
+
+        showNotification('Recette ajoutée avec succès !', 'success');
+        resetForm();
+        showTab('recipes');
+        
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde:', error);
+        showNotification('Erreur lors de la sauvegarde: ' + error.message, 'error');
+      } finally {
+        isLoading = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    }
+
+    // Validation du formulaire
+    function validateForm() {
+      const title = document.getElementById('title').value.trim();
+      const author = document.getElementById('author').value.trim();
+      const category = document.getElementById('category').value;
+      const instructions = document.getElementById('instructions').value.trim();
+      const submitBtn = document.getElementById('submit-btn');
+      
+      const isValid = title && author && category && instructions && tempIngredients.length > 0;
+      submitBtn.disabled = !isValid;
+    }
+
+    // Ajout d'un ingrédient
+    window.addIngredient = function() {
+      const name = document.getElementById('ingredient-name').value.trim();
+      const quantity = document.getElementById('ingredient-quantity').value.trim();
+
+      if (!name || !quantity) {
+        showNotification('Veuillez saisir un ingrédient et sa quantité', 'error');
+        return;
+      }
+
+      const exists = tempIngredients.some(ing => ing.nom.toLowerCase() === name.toLowerCase());
+      if (exists) {
+        showNotification('Cet ingrédient est déjà dans la liste', 'error');
+        return;
+      }
+
+      tempIngredients.push({ nom: name, quantite: quantity });
+      
+      document.getElementById('ingredient-name').value = '';
+      document.getElementById('ingredient-quantity').value = '';
+      
+      updateIngredientList();
+      validateForm();
+      document.getElementById('ingredient-name').focus();
+    };
+
+    window.removeIngredient = function(index) {
+      tempIngredients.splice(index, 1);
+      updateIngredientList();
+      validateForm();
+    };
+
+    function updateIngredientList() {
+      const container = document.getElementById('ingredient-list');
+      
+      if (tempIngredients.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Aucun ingrédient ajouté</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      tempIngredients.forEach((ing, index) => {
+        const item = document.createElement('div');
+        item.className = 'ingredient-item';
+        item.innerHTML = `
+          <span><strong>${sanitizeHtml(ing.nom)}</strong> – ${sanitizeHtml(ing.quantite)}</span>
+          <button type="button" class="btn btn-danger btn-small" onclick="removeIngredient(${index})">✖</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Reset du formulaire
+    function resetForm() {
+      document.getElementById('recipe-form').reset();
+      document.getElementById('edit-id').value = '';
+      tempIngredients = [];
+      updateIngredientList();
+      validateForm();
+    }
+
+    // Affichage des détails d'une recette
+    window.viewRecipeDetails = function(id) {
+      const recipe = recipes.find(r => r.id === id);
+      if (!recipe) return;
+      
+      const details = `
+Titre: ${recipe.title}
+Auteur: ${recipe.author}
+Catégorie: ${recipe.category}
+${recipe.prepTime ? 'Temps de préparation: ' + recipe.prepTime + ' min\n' : ''}
+${recipe.servings ? 'Portions: ' + recipe.servings + '\n' : ''}
+
+Ingrédients:
+${recipe.ingredients ? recipe.ingredients.map(ing => `• ${ing.nom} - ${ing.quantite}`).join('\n') : 'Aucun'}
+
+Instructions:
+${recipe.instructions}
+      `;
+      
+      alert(details);
+    };
+
+    // Suppression d'une recette
+    window.deleteRecipe = async function(id) {
+      const recipe = recipes.find(r => r.id === id);
+      if (!recipe) return;
+      
+      if (confirm(`Êtes-vous sûr de vouloir supprimer la recette "${recipe.title}" ?`)) {
+        try {
+          if (!offlineMode && window.FirebaseModules) {
+            const { doc, deleteDoc } = window.FirebaseModules;
+            await deleteDoc(doc(db, 'recipes', id));
+          } else {
+            // Mode hors ligne
+            const index = recipes.findIndex(r => r.id === id);
+            if (index !== -1) {
+              recipes.splice(index, 1);
+              saveOfflineData();
+              processRecipesData();
+            }
+          }
+          showNotification('Recette supprimée', 'success');
+        } catch (error) {
+          console.error('Erreur lors de la suppression:', error);
+          showNotification('Erreur lors de la suppression', 'error');
+        }
+      }
+    };
+
+    // Gestion des onglets
+    window.showTab = function(tabName) {
+      // Nettoyer l'event pour éviter les erreurs
+      const clickedButton = event && event.target ? event.target : document.querySelector('.tab-btn.active');
+      
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      document.getElementById(tabName + '-tab').classList.add('active');
+      if (clickedButton) {
+        clickedButton.classList.add('active');
+      }
+      
+      currentTab = tabName;
+      
+      if (tabName === 'add') {
+        setTimeout(() => {
+          const titleInput = document.getElementById('title');
+          if (titleInput) titleInput.focus();
+        }, 100);
+      }
+    };
+
+    // Application des filtres
+    function applyFilters() {
+      displayRecipes();
+    }
+
+    function applyFiltersToRecipes() {
+      const searchTerm = document.getElementById('search').value.toLowerCase();
+      
+      return recipes.filter(recipe => {
+        const matchesSearch = !searchTerm || 
+          recipe.title.toLowerCase().includes(searchTerm) ||
+          (recipe.instructions && recipe.instructions.toLowerCase().includes(searchTerm)) ||
+          (recipe.ingredients && recipe.ingredients.some(ing => ing.nom.toLowerCase().includes(searchTerm)));
+
+        const matchesCategory = !selectedFilters.category || recipe.category === selectedFilters.category;
+
+        return matchesSearch && matchesCategory;
+      });
+    }
+
+    // Mise à jour des filtres
+    function updateFilters() {
+      updateCategoryFilter();
+    }
+
+    function updateCategoryFilter() {
+      const container = document.getElementById('category-filter');
+      const categories = [...new Set(recipes.map(r => r.category).filter(Boolean))];
+      
+      container.innerHTML = '';
+      categories.forEach(category => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.textContent = category;
+        btn.classList.toggle('selected', selectedFilters.category === category);
+        btn.onclick = () => toggleCategoryFilter(category);
+        container.appendChild(btn);
+      });
+    }
+
+    function toggleCategoryFilter(category) {
+      selectedFilters.category = selectedFilters.category === category ? null : category;
+      updateCategoryFilter();
+      applyFilters();
+    }
+
+    // Utilitaires
+    function showLoading(show) {
+      const loadingElements = document.querySelectorAll('.loading');
+      loadingElements.forEach(el => {
+        if (show) {
+          el.classList.add('show');
+        } else {
+          el.classList.remove('show');
+        }
+      });
+    }
+
+    function showNotification(message, type = 'info') {
+      // Supprimer les notifications existantes
+      document.querySelectorAll('.notification').forEach(n => n.remove());
+      
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.style.animation = 'slideInRight 0.3s ease reverse';
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 300);
+        }
+      }, 4000);
+    }
+
+    function sanitizeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // Nettoyage des listeners lors de la fermeture
+    window.addEventListener('beforeunload', function() {
+      if (unsubscribeListener) {
+        unsubscribeListener();
+      }
+    });
+
+    // Démarrage de l'application - SÉCURISÉ
+    function startApp() {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeApp);
+      } else {
+        initializeApp();
+      }
+    }
+
+    // Lancer l'application une seule fois
+    startApp();
+  </script>
+</body>
+</html>
